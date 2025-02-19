@@ -13,7 +13,8 @@ def compute_counterfactual(Xs_train,
                            material_information,
                            target_value,
                            allowed_deviation=0.1,
-                           eta=0.01):
+                           eta=0.01,
+                           max_iterations=3000):
     # Load and normalize data
     Xs_train, Xs_means, Xs_stds = normalize_data(Xs_train)
     ys_train, ys_means, ys_stds = normalize_data(ys_train)
@@ -33,8 +34,7 @@ def compute_counterfactual(Xs_train,
     deviation = np.inf
     step = 0
     denormalized_config, denormalized_regr = None, None
-    previous_mean, converged_counter = None, 0
-    while deviation > allowed_deviation:
+    while deviation > allowed_deviation and step < max_iterations:
         with tf.GradientTape() as tape:
             tape.watch(init_mean)
 
@@ -59,5 +59,7 @@ def compute_counterfactual(Xs_train,
             f"Deviation: {deviation[0]:.3f}"
         )
         step += 1
-
+    denormalized_config = tf.concat(
+        [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
+    )
     return denormalized_config, denormalized_regr
