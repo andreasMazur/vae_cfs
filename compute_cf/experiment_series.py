@@ -7,13 +7,14 @@ import numpy as np
 import os
 
 
-def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path):
+def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250):
     _, Xs_means, Xs_stds = normalize_data(Xs)
     Xs = Xs[:, [2, 3, 4]]
-    Xs_test, ys_test = Xs_test[:500], ys_test[:500]
+    Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
     # Try to re-create original W1-values and compare CF to original data point
-    abs_deviations = []
+    cfs = []
+    targets = []
     for idx, (target_cf, target_value) in enumerate(zip(Xs_test, ys_test)):
         print(f"\n\nCurrently computing CF {idx} of {Xs_test.shape[0] - 1}")
         print(f"Target CF: {target_cf.tolist()}")
@@ -27,8 +28,9 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path):
             allowed_deviation=0.1,
             eta=0.01
         )
-        abs_deviations.append(np.abs(config_cf - target_cf[2:]).sum())
-    return np.array(abs_deviations)
+        cfs.append(config_cf)
+        targets.append(target_cf)
+    return np.array(cfs), np.array(targets)
 
 
 def remove_k_nearest_neighbors(Xs, ys, sample, k):
@@ -43,7 +45,7 @@ def train_on_partial_data(path, logging_dir, total_repetitions=5):
     # Randomly pick a data point in Xs
     selected_sample = Xs[np.random.randint(low=0, high=Xs.shape[0])]
     for repetition in range(total_repetitions):
-        ks = [1_000, 2_500, 5_000, 7_500, 10_000, 15_000, 20_000, 25_000, 50_000, 100_000, 125_000, 150_000]
+        ks = [1_000, 2_500, 5_000, 7_500, 10_000, 15_000, 20_000, 25_000, 50_000, 100_000]
         for k in ks:
             # - Remove k nearest neighbors
             Xs, ys = remove_k_nearest_neighbors(Xs, ys, selected_sample, k)
@@ -65,7 +67,9 @@ def train_on_partial_data(path, logging_dir, total_repetitions=5):
                 )
 
             # - Check quality of counterfactuals
-            cf_deviations_file = f"{logging_dir}/{vae_path}/rep_{repetition}_cf_performances_{k}_removed.npy"
-            if not os.path.isfile(cf_deviations_file):
-                abs_deviations = evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
-                np.save(cf_deviations_file, abs_deviations)
+            cfs_file = f"{vae_path}/rep_{repetition}_cfs_{k}_removed.npy"
+            targets_file = f"{vae_path}/rep_{repetition}_targets_{k}_removed.npy"
+            if not os.path.isfile(cfs_file):
+                cfs, targets = evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
+                np.save(cfs_file, cfs)
+                np.save(targets_file, targets)
