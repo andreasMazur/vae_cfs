@@ -68,7 +68,7 @@ def train_on_partial_data(path, logging_dir, total_repetitions=5):
             targets_file = f"{vae_path}/rep_{repetition}_targets_{k}_removed.npy"
             y_targets_file = f"{vae_path}/rep_{repetition}_y_targets_{k}_removed.npy"
             if not os.path.isfile(cfs_file):
-                cfs, targets = evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
+                cfs = evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
                 np.save(cfs_file, cfs)
                 np.save(targets_file, Xs_test)
                 np.save(y_targets_file, ys_test)
