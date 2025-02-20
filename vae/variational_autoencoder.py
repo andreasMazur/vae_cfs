@@ -1,25 +1,26 @@
 import tensorflow as tf
+import keras
 
 
-class VariationalAutoEncoder(tf.keras.models.Model):
+class VariationalAutoEncoder(keras.models.Model):
     def __init__(self, encoding_dims, decoding_dims, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Encoder
         self.encoding_dims = encoding_dims
-        self.encoder = tf.keras.models.Sequential(name="encoder")
+        self.encoder = keras.models.Sequential(name="encoder")
         for dim in self.encoding_dims[:-1]:
-            self.encoder.add(tf.keras.layers.Dense(dim, activation="linear"))
-            self.encoder.add(tf.keras.layers.BatchNormalization())
-            self.encoder.add(tf.keras.layers.ReLU())
+            self.encoder.add(keras.layers.Dense(dim, activation="linear"))
+            self.encoder.add(keras.layers.BatchNormalization())
+            self.encoder.add(keras.layers.ReLU())
 
         # Bottleneck
         self.latent_dim = self.encoding_dims[-1]
-        self.mean_predictor = tf.keras.layers.Dense(
+        self.mean_predictor = keras.layers.Dense(
             self.latent_dim,
             activation="linear",
             name="mean_predictor"
         )
-        self.log_var_predictor = tf.keras.layers.Dense(
+        self.log_var_predictor = keras.layers.Dense(
             self.latent_dim,
             activation="linear",
             name="log_std_predictor"
@@ -27,14 +28,14 @@ class VariationalAutoEncoder(tf.keras.models.Model):
 
         # Decoder
         self.decoding_dims = decoding_dims
-        self.decoder = tf.keras.models.Sequential(name="decoder")
+        self.decoder = keras.models.Sequential(name="decoder")
         for dim in self.decoding_dims:
-            self.decoder.add(tf.keras.layers.Dense(dim, activation="linear"))
-            self.decoder.add(tf.keras.layers.BatchNormalization())
-            self.decoder.add(tf.keras.layers.ReLU())
+            self.decoder.add(keras.layers.Dense(dim, activation="linear"))
+            self.decoder.add(keras.layers.BatchNormalization())
+            self.decoder.add(keras.layers.ReLU())
 
-        self.tool_geometry_output = tf.keras.layers.Dense(2, activation="linear")
-        self.clamping_output = tf.keras.layers.Dense(1, activation="linear")
+        self.tool_geometry_output = keras.layers.Dense(2, activation="linear")
+        self.clamping_output = keras.layers.Dense(1, activation="linear")
         self.feature_amount = None
 
     def build(self, input_shape):
@@ -86,7 +87,7 @@ class VariationalAutoEncoder(tf.keras.models.Model):
         return model
 
 
-class ReconstructionMetric(tf.keras.metrics.Metric):
+class ReconstructionMetric(keras.metrics.Metric):
     def __init__(self, latent_dim, name="reconstruction_loss", **kwargs):
         super().__init__(name=name, **kwargs)
         self.total_loss = self.add_weight(name="total_loss", initializer="zeros")
@@ -122,7 +123,7 @@ class ReconstructionMetric(tf.keras.metrics.Metric):
         return cls(**config)
 
 
-class KLDivMetric(tf.keras.metrics.Metric):
+class KLDivMetric(keras.metrics.Metric):
     def __init__(self, latent_dim, name="kl_divergence", **kwargs):
         super().__init__(name=name, **kwargs)
         self.total_loss = self.add_weight(name="total_loss", initializer="zeros")
@@ -156,7 +157,7 @@ class KLDivMetric(tf.keras.metrics.Metric):
         return cls(**config)
 
 
-class EvidenceLowerBound(tf.keras.losses.Loss):
+class EvidenceLowerBound(keras.losses.Loss):
     def __init__(self, latent_dim, beta, warmup_steps, name="evidence_lower_bound_loss", **kwargs):
         super().__init__(name=name, **kwargs)
         self.latent_dim = latent_dim

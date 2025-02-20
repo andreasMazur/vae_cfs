@@ -1,6 +1,7 @@
 from vae.train_ae import normalize_data, de_normalize_data
 
 import tensorflow as tf
+import keras
 import numpy as np
 import os
 
@@ -22,7 +23,7 @@ def evaluate(model, test_data):
 def r2_score(y_true, y_pred):
     residual_sum_of_squares = tf.reduce_sum(tf.square(y_true - y_pred))
     total_sum_of_squares = tf.reduce_sum(tf.square(y_true - tf.reduce_mean(y_true)))
-    r2 = 1 - residual_sum_of_squares / (total_sum_of_squares + tf.keras.backend.epsilon())
+    r2 = 1 - residual_sum_of_squares / (total_sum_of_squares + keras.backend.epsilon())
     return r2
 
 
@@ -39,25 +40,25 @@ def train_surrogate(Xs, ys, Xs_val, ys_val, Xs_test, ys_test, dimensions=None, l
     ys_val, ys_val_mins, ys_val_maxs = normalize_data(ys_val)
 
     # Define regressor
-    layers = [tf.keras.layers.Dense(dim, activation="relu") for dim in dimensions]
-    regressor = tf.keras.models.Sequential(layers + [tf.keras.layers.Dense(1, activation="linear")])
+    layers = [keras.layers.Dense(dim, activation="relu") for dim in dimensions]
+    regressor = keras.models.Sequential(layers + [keras.layers.Dense(1, activation="linear")])
     regressor.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        optimizer=keras.optimizers.Adam(learning_rate=0.01),
         loss="mse",
         metrics=["mse", "mae", r2_score]
     )
 
     # Train regressor
     os.makedirs(logging_dir, exist_ok=True)
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(
+    cp_callback = keras.callbacks.ModelCheckpoint(
         filepath=f"{logging_dir}/surrogate.keras",
         save_best_only=True,
         save_weights_only=False,
         verbose=True
     )
-    csv_callback = tf.keras.callbacks.CSVLogger(f"{logging_dir}/training.csv")
-    stop_callback = tf.keras.callbacks.EarlyStopping(monitor="val_mse", patience=4, min_delta=0.001)
-    tensorboard_cb = tf.keras.callbacks.TensorBoard(
+    csv_callback = keras.callbacks.CSVLogger(f"{logging_dir}/training.csv")
+    stop_callback = keras.callbacks.EarlyStopping(monitor="val_mse", patience=4, min_delta=0.001)
+    tensorboard_cb = keras.callbacks.TensorBoard(
         log_dir=f"{logging_dir}/tensorboard_logs",
         histogram_freq=0,
         write_graph=False,
