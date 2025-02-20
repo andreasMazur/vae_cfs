@@ -14,7 +14,7 @@ def compute_counterfactual(Xs_train,
                            target_value,
                            allowed_deviation=0.1,
                            eta=0.01,
-                           max_iterations=1000):
+                           max_iterations=2000):
     # Load and normalize data
     Xs_train, Xs_means, Xs_stds = normalize_data(Xs_train)
     ys_train, ys_means, ys_stds = normalize_data(ys_train)
