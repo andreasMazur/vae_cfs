@@ -14,7 +14,8 @@ def compute_counterfactual(Xs_train,
                            target_value,
                            allowed_deviation=0.1,
                            eta=0.01,
-                           max_iterations=1000):
+                           max_iterations=2000,
+                           verbose=False):
     # Load and normalize data
     Xs_train, Xs_means, Xs_stds = normalize_data(Xs_train)
     ys_train, ys_means, ys_stds = normalize_data(ys_train)
@@ -51,13 +52,14 @@ def compute_counterfactual(Xs_train,
 
         denormalized_config = conf * Xs_stds + Xs_means
 
-        sys.stdout.write(
-            f"\rStep: {step} - "
-            f"Generated config: {denormalized_config.numpy().tolist()} - "
-            f"Regression: {denormalized_regr:.3f} - "
-            f"Target value: {target_value[0]:.3f} - "
-            f"Deviation: {deviation[0]:.3f}"
-        )
+        if verbose:
+            sys.stdout.write(
+                f"\rStep: {step} - "
+                f"Generated config: {denormalized_config.numpy().tolist()} - "
+                f"Regression: {denormalized_regr:.3f} - "
+                f"Target value: {target_value[0]:.3f} - "
+                f"Deviation: {deviation[0]:.3f}"
+            )
         step += 1
     denormalized_config = tf.concat(
         [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1

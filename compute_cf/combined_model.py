@@ -6,7 +6,7 @@ from vae.variational_autoencoder import (
     KLDivMetric,
     EvidenceLowerBound
 )
-from surrogate_model.surrogat_model import r2_score
+from surrogate_model.surrogate_model import r2_score
 
 import tensorflow as tf
 

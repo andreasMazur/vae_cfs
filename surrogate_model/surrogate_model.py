@@ -72,7 +72,8 @@ def train_surrogate(Xs, ys, Xs_val, ys_val, Xs_test, ys_test, dimensions=None, l
         batch_size=64,
         epochs=10_000,
         validation_data=(Xs_val, ys_val),
-        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb]
+        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb],
+        verbose=2
     )
     regressor.save(f"{logging_dir}/trained_surrogate.keras")
     evaluate(regressor, (Xs_test, ys_test))

@@ -83,7 +83,8 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         batch_size=64,
         epochs=10_000,
         validation_data=(Xs_val, Xs_val),
-        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb]
+        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb],
+        verbose=2
     )
 
     print("Evaluate")
