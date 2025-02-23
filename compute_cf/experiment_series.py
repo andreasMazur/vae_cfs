@@ -46,7 +46,7 @@ def multiprocessing_experiment_series(data_path, logging_dir, repetitions):
 
 
 def train_on_partial_data(data_path, logging_dir):
-    for k in [9370 * i for i in range(1, 21)]:
+    for k in [9370 * i for i in range(1, 20)]:
         # Remove k nearest neighbors
         (Xs, ys), (Xs_val, ys_val), (Xs_test, ys_test) = load_data(data_path, splitted=True)
         # Randomly pick a data point in Xs
