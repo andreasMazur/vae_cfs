@@ -56,7 +56,9 @@ def train_on_partial_data(data_path, logging_dir):
         # - Train new VAE
         vae_path = f"{logging_dir}/vae_{k}_nn_removed"
         if not os.path.isdir(vae_path):
-            train_vae(Xs, Xs_val, Xs_test, logging_dir=vae_path)
+            training_history = None
+            while training_history is None or np.isnan(training_history.history["loss"][-1]):
+                training_history = train_vae(Xs, Xs_val, Xs_test, logging_dir=vae_path)
             np.save(f"{vae_path}/Xs_train.npy", Xs)
             np.save(f"{vae_path}/ys_train.npy", ys)
 

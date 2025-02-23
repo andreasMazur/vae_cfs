@@ -77,7 +77,7 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         write_steps_per_second=False,
         update_freq="batch"
     )
-    vae.fit(
+    training_history = vae.fit(
         Xs,
         Xs,
         batch_size=64,
@@ -90,3 +90,4 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
     print("Evaluate")
     result = vae.evaluate(x=Xs_test, y=Xs_test)
     print(dict(zip(vae.metrics_names, result)))
+    return training_history
