@@ -1,5 +1,5 @@
 from compute_cf.compute_cf import compute_counterfactual
-from data.data_loading import load_data
+from data.data_loading import load_data, COL_BENDING_ANGLE, COL_BENDING_RADIUS
 from surrogate_model.surrogate_model import train_surrogate
 from vae.train_ae import train_vae, normalize_data
 
@@ -11,7 +11,7 @@ import os
 
 def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250):
     _, Xs_means, Xs_stds = normalize_data(Xs)
-    Xs = Xs[:, [2, 3, 4]]
+    Xs = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
     # Try to re-create original W1-values and compare CF to original data point
@@ -35,7 +35,9 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
 
 def remove_k_nearest_neighbors(Xs, ys, sample, k):
     # Filter for clamping angle and radius
-    keep = np.linalg.norm(Xs[:, [3, 4]] - sample[None, [3, 4]], axis=-1).argsort()[k:]
+    neighbors = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
+    sample = sample[None, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
+    keep = np.linalg.norm(neighbors - sample, axis=-1).argsort()[k:]
     return Xs[keep], ys[keep]
 
 
@@ -45,15 +47,18 @@ def multiprocessing_experiment_series(data_path, logging_dir, repetitions):
         p.starmap(train_on_partial_data, [(data_path, ld) for ld in logging_dirs])
 
 
-def train_on_partial_data(data_path, logging_dir):
-    for k in [9370 * i for i in range(1, 20)]:
-        # Remove k nearest neighbors
-        (Xs, ys), (Xs_val, ys_val), (Xs_test, ys_test) = load_data(data_path, splitted=True)
-        # Randomly pick a data point in Xs
-        selected_sample = Xs[np.random.randint(low=0, high=Xs.shape[0])]
+def train_on_partial_data(data_path, logging_dir, n_test=200):
+    # Select test data
+    _, _, (Xs_test, ys_test) = load_data(data_path, splitted=True)
+    Xs_test, ys_test = Xs_test[:n_test], ys_test[:n_test]
+
+    for k in [4681 * i for i in range(0, 20)]:
+        # Randomly pick a data point in test set and remove its k nearest neighbors in the training data
+        (Xs, ys), (Xs_val, ys_val), _ = load_data(data_path, splitted=True)
+        selected_sample = Xs_test[np.random.randint(low=0, high=n_test)]
         Xs, ys = remove_k_nearest_neighbors(Xs, ys, selected_sample, k)
 
-        # - Train new VAE
+        # Train new VAE
         vae_path = f"{logging_dir}/vae_{k}_nn_removed"
         if not os.path.isdir(vae_path):
             training_history = None
@@ -62,14 +67,14 @@ def train_on_partial_data(data_path, logging_dir):
             np.save(f"{vae_path}/Xs_train.npy", Xs)
             np.save(f"{vae_path}/ys_train.npy", ys)
 
-        # - Train new surrogate model
+        # Train new surrogate model
         surrogate_path = f"{logging_dir}/surrogate_{k}_nn_removed"
         if not os.path.isdir(surrogate_path):
             train_surrogate(
                 Xs, ys, Xs_val, ys_val, Xs_test, ys_test, dimensions=[32, 32], logging_dir=surrogate_path
             )
 
-        # - Check quality of counterfactuals
+        # Check quality of counterfactuals
         cfs_file = f"{vae_path}/cfs.npy"
         cf_preds_file = f"{vae_path}/cf_preds.npy"
         targets_file = f"{vae_path}/targets.npy"

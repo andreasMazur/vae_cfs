@@ -35,7 +35,6 @@ class VariationalAutoEncoder(keras.models.Model):
             self.decoder.add(keras.layers.ReLU())
 
         self.tool_geometry_output = keras.layers.Dense(2, activation="linear")
-        self.clamping_output = keras.layers.Dense(1, activation="linear")
         self.feature_amount = None
 
     def build(self, input_shape):
@@ -59,8 +58,7 @@ class VariationalAutoEncoder(keras.models.Model):
         samples = self.sample(pred_mean, pred_log_var, training=training)
         samples = self.decoder(samples)
         reconstructed_tool_geometry = self.tool_geometry_output(samples)
-        reconstructed_clamping = self.clamping_output(samples)
-        return tf.concat([reconstructed_clamping, reconstructed_tool_geometry], axis=-1)
+        return reconstructed_tool_geometry
 
     def call(self, inputs, training=None, mask=None):
         pred_mean, pred_log_var = self.encode(inputs)
@@ -96,13 +94,11 @@ class ReconstructionMetric(keras.metrics.Metric):
 
     def update_state(self, y_true, y_pred, *args, **kwargs):
         batch_size = tf.cast(tf.shape(y_true)[0], tf.float32)
-        clamping = y_pred[:, self.latent_dim * 2]
-        tool_geometry = y_pred[:, self.latent_dim * 2 + 1:]
+        tool_geometry = y_pred[:, self.latent_dim * 2:]
 
         # Sum over batch / total loss over batch
-        bce = binary_cross_entropy(y_true[:, 0], clamping)
-        mse = mean_squared_error(y_true[:, 1:], tool_geometry)
-        total_recon_loss = tf.reduce_sum((bce / 3) + (2 * mse / 3))
+        mse = mean_squared_error(y_true, tool_geometry)
+        total_recon_loss = tf.reduce_sum(mse)
         self.total_loss.assign_add(total_recon_loss)
         self.count.assign_add(batch_size)
 
@@ -168,19 +164,16 @@ class EvidenceLowerBound(keras.losses.Loss):
     def call(self, y_true, y_pred):
         pred_mean = y_pred[:, :self.latent_dim]
         pred_var = y_pred[:, self.latent_dim:self.latent_dim * 2]
-        clamping = y_pred[:, self.latent_dim * 2]
-        tool_geometry = y_pred[:, self.latent_dim * 2 + 1:]
+        tool_geometry = y_pred[:, self.latent_dim * 2:]
 
-        # KL-divergence regularization + reconstruction error (bce + mse)
         kl_div = analytical_kl_div(pred_mean, pred_var)
-        bce = binary_cross_entropy(y_true[:, 0], clamping)
-        mse = mean_squared_error(y_true[:, 1:], tool_geometry)
+        mse = mean_squared_error(y_true, tool_geometry)
 
         # Respect warm-up period
         coeff = self.training_steps / self.warmup_steps if self.training_steps < self.warmup_steps else 1.0
         self.training_steps = self.training_steps + 1
 
-        loss = coeff * self.beta * kl_div + (bce / 3) + (2 * mse / 3)
+        loss = coeff * self.beta * kl_div + mse
         return loss
 
     def get_config(self):

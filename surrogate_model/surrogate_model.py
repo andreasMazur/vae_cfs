@@ -1,3 +1,4 @@
+from data.data_loading import COL_CLAMPING, USE_CLAMPING_FILTER
 from vae.train_ae import normalize_data, de_normalize_data
 
 import tensorflow as tf
@@ -34,9 +35,13 @@ def train_surrogate(Xs, ys, Xs_val, ys_val, Xs_test, ys_test, dimensions=None, l
         logging_dir = "./trained_surrogate"
 
     # Normalize data
-    Xs, Xs_mins, Xs_maxs = normalize_data(Xs, disregard_dims=[2])
+    if USE_CLAMPING_FILTER is None:
+        Xs, Xs_mins, Xs_maxs = normalize_data(Xs, disregard_dims=[COL_CLAMPING])
+        Xs_val, Xs_val_mins, Xs_val_maxs = normalize_data(Xs_val, disregard_dims=[COL_CLAMPING])
+    else:
+        Xs, Xs_mins, Xs_maxs = normalize_data(Xs)
+        Xs_val, Xs_val_mins, Xs_val_maxs = normalize_data(Xs_val)
     ys, ys_means, ys_stds = normalize_data(ys)
-    Xs_val, Xs_val_mins, Xs_val_maxs = normalize_data(Xs_val, disregard_dims=[2])
     ys_val, ys_val_mins, ys_val_maxs = normalize_data(ys_val)
 
     # Define regressor

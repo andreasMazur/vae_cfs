@@ -1,3 +1,4 @@
+from data.data_loading import COL_BENDING_ANGLE, COL_BENDING_RADIUS, USE_CLAMPING_FILTER, COL_CLAMPING
 from vae.variational_autoencoder import (
     VariationalAutoEncoder,
     EvidenceLowerBound,
@@ -13,8 +14,8 @@ def normalize_data(data, disregard_dims=None):
     dims_mean = data.mean(axis=0)
     dims_std = data.std(axis=0)
     if disregard_dims is not None:
-        dims_mean[disregard_dims] = 0
-        dims_std[disregard_dims] = 1
+        dims_mean[disregard_dims] = 0.
+        dims_std[disregard_dims] = 1.
     data = (data - dims_mean) / dims_std
     return data, dims_mean, dims_std
 
@@ -28,14 +29,21 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         logging_dir = "./trained_vae"
 
     # Filter for clamping angle and radius
-    Xs, Xs_val, Xs_test = Xs[:, [2, 3, 4]], Xs_val[:, [2, 3, 4]], Xs_test[:, [2, 3, 4]]
+    Xs = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
+    Xs_val = Xs_val[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
+    Xs_test = Xs_test[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
 
     # Don't normalize clamping
-    Xs, Xs_means, Xs_stds = normalize_data(Xs, disregard_dims=[0])
-    Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val, disregard_dims=[0])
-    Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test, disregard_dims=[0])
+    if USE_CLAMPING_FILTER is None:
+        Xs, Xs_means, Xs_stds = normalize_data(Xs, disregard_dims=[COL_CLAMPING])
+        Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val, disregard_dims=[COL_CLAMPING])
+        Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test, disregard_dims=[COL_CLAMPING])
+    else:
+        Xs, Xs_means, Xs_stds = normalize_data(Xs)
+        Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val)
+        Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test)
 
-    latent_dim = 2
+    latent_dim = 1
     vae = VariationalAutoEncoder(encoding_dims=[16, 16, latent_dim], decoding_dims=[16, 16])
     vae.compile(
         optimizer=tf.keras.optimizers.AdamW(
