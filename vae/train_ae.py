@@ -46,15 +46,14 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
     latent_dim = 1
     vae = VariationalAutoEncoder(encoding_dims=[16, 16, latent_dim], decoding_dims=[16, 16])
     vae.compile(
-        optimizer=tf.keras.optimizers.AdamW(
+        optimizer=tf.keras.optimizers.Adam(
             learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=0.01431224851518938,
-                decay_steps=2407,
-                decay_rate=0.9508174254269613
-            ),
-            weight_decay=0.12546620417641197
+                initial_learning_rate=0.012183574795933263,
+                decay_steps=1463,
+                decay_rate=0.9
+            )
         ),
-        loss=EvidenceLowerBound(latent_dim=latent_dim, beta=55.29819837741578, warmup_steps=576),
+        loss=EvidenceLowerBound(latent_dim=latent_dim, beta=100., warmup_steps=1517),
         metrics=[ReconstructionMetric(latent_dim=latent_dim), KLDivMetric(latent_dim=latent_dim)]
     )
     vae(tf.zeros((1, Xs.shape[-1])))
