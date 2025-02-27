@@ -23,8 +23,8 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
             ys,
             vae_path,
             surrogate_path,
-            (target_cf[:2] - Xs_means[:2]) / Xs_stds[:2],
-            target_value,
+            material_information=(target_cf[:2] - Xs_means[:2]) / Xs_stds[:2],
+            target_value=target_value,
             allowed_deviation=0.1,
             eta=0.01,
             verbose=True
