@@ -26,7 +26,8 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
             (target_cf[:2] - Xs_means[:2]) / Xs_stds[:2],
             target_value,
             allowed_deviation=0.1,
-            eta=0.01
+            eta=0.01,
+            verbose=True
         )
         cfs.append(config_cf)
         cf_preds.append(cf_pred)
