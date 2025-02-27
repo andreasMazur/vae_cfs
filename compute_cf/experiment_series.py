@@ -11,7 +11,6 @@ import os
 
 def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250):
     _, Xs_means, Xs_stds = normalize_data(Xs)
-    Xs = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
     # Try to re-create original W1-values and compare CF to original data point
@@ -23,7 +22,6 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
             ys,
             vae_path,
             surrogate_path,
-            material_information=(target_cf[:2] - Xs_means[:2]) / Xs_stds[:2],
             target_value=target_value,
             allowed_deviation=0.1,
             eta=0.01,

@@ -34,11 +34,12 @@ class VariationalAutoEncoder(keras.models.Model):
             self.decoder.add(keras.layers.BatchNormalization())
             self.decoder.add(keras.layers.ReLU())
 
-        self.tool_geometry_output = keras.layers.Dense(2, activation="linear")
+        self.process_config_output = None
         self.feature_amount = None
 
     def build(self, input_shape):
         self.feature_amount = input_shape[1]
+        self.process_config_output = keras.layers.Dense(self.feature_amount, activation="linear")
         self.call(tf.zeros(input_shape))
 
     def encode(self, inputs):
@@ -57,8 +58,8 @@ class VariationalAutoEncoder(keras.models.Model):
     def decode(self, pred_mean, pred_log_var, training=None):
         samples = self.sample(pred_mean, pred_log_var, training=training)
         samples = self.decoder(samples)
-        reconstructed_tool_geometry = self.tool_geometry_output(samples)
-        return reconstructed_tool_geometry
+        reconstructed_process_config = self.process_config_output(samples)
+        return reconstructed_process_config
 
     def call(self, inputs, training=None, mask=None):
         pred_mean, pred_log_var = self.encode(inputs)
@@ -94,10 +95,10 @@ class ReconstructionMetric(keras.metrics.Metric):
 
     def update_state(self, y_true, y_pred, *args, **kwargs):
         batch_size = tf.cast(tf.shape(y_true)[0], tf.float32)
-        tool_geometry = y_pred[:, self.latent_dim * 2:]
+        recon_process_config = y_pred[:, self.latent_dim * 2:]
 
         # Sum over batch / total loss over batch
-        mse = mean_squared_error(y_true, tool_geometry)
+        mse = mean_squared_error(y_true, recon_process_config)
         total_recon_loss = tf.reduce_sum(mse)
         self.total_loss.assign_add(total_recon_loss)
         self.count.assign_add(batch_size)
@@ -164,10 +165,10 @@ class EvidenceLowerBound(keras.losses.Loss):
     def call(self, y_true, y_pred):
         pred_mean = y_pred[:, :self.latent_dim]
         pred_var = y_pred[:, self.latent_dim:self.latent_dim * 2]
-        tool_geometry = y_pred[:, self.latent_dim * 2:]
+        recon_process_config = y_pred[:, self.latent_dim * 2:]
 
         kl_div = analytical_kl_div(pred_mean, pred_var)
-        mse = mean_squared_error(y_true, tool_geometry)
+        mse = mean_squared_error(y_true, recon_process_config)
 
         # Respect warm-up period
         coeff = self.training_steps / self.warmup_steps if self.training_steps < self.warmup_steps else 1.0

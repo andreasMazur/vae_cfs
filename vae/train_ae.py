@@ -28,11 +28,6 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
     if logging_dir is None:
         logging_dir = "./trained_vae"
 
-    # Filter for clamping angle and radius
-    Xs = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
-    Xs_val = Xs_val[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
-    Xs_test = Xs_test[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
-
     # Don't normalize clamping
     if USE_CLAMPING_FILTER is None:
         Xs, Xs_means, Xs_stds = normalize_data(Xs, disregard_dims=[COL_CLAMPING])

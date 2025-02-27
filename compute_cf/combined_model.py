@@ -1,5 +1,4 @@
-from data.data_loading import load_data, USE_CLAMPING_FILTER
-from vae.train_ae import de_normalize_data, normalize_data
+from data.data_loading import USE_CLAMPING_FILTER
 from vae.variational_autoencoder import (
     VariationalAutoEncoder,
     ReconstructionMetric,
@@ -34,35 +33,13 @@ class CombinedModel(tf.keras.models.Model):
             f"{surrogate_path}/surrogate.keras", custom_objects={"r2_score": r2_score}
         )
 
-    def call(self, inputs, **kwargs):
-        mean_values, material_information = inputs
-        generated = self.vae.decode(pred_mean=mean_values, pred_log_var=tf.zeros_like(mean_values))
+    def call(self, inputs, training=None, **kwargs):
+        generated = self.vae.decode(pred_mean=inputs, pred_log_var=tf.zeros_like(inputs), training=training)
         if USE_CLAMPING_FILTER is None:
-            input_for_surrogate = tf.concat(
-                [material_information[None, :], tf.round(tf.nn.sigmoid(generated[:, :1])), generated[:, 1:]], axis=-1
+            generated = tf.concat(
+                [generated[:, :2], tf.round(tf.nn.sigmoid(generated[:, 2:3])), generated[:, 3:]], axis=-1
             )
-        else:
-            input_for_surrogate = tf.concat([material_information[None, :], generated], axis=-1)
-        return generated, self.surrogate(input_for_surrogate)
+        return generated, self.surrogate(generated)
 
     def return_in_space_mean(self, n=1):
         return tf.random.uniform((n, self.vae.latent_dim), minval=self.minimal_mean, maxval=self.maximum_mean)
-
-
-def test_cm(data_path, vae_path, surrogate_path, repetitions=10):
-    (Xs, ys), _, _ = load_data(data_path, splitted=True)
-
-    Xs, Xs_means, Xs_stds = normalize_data(Xs)
-    ys, ys_means, ys_stds = normalize_data(ys)
-    cm = CombinedModel(Xs, vae_path, surrogate_path)
-    cm.return_in_space_mean()
-
-    sampled_means = tf.random.uniform((repetitions, tf.shape(cm.minimal_mean)[0]), cm.minimal_mean, cm.maximum_mean)
-    artificial_configs, regressions = cm(sampled_means)
-    artificial_configs = de_normalize_data(artificial_configs, Xs_means, Xs_stds)
-    regressions = de_normalize_data(regressions, ys_means, ys_stds)
-
-    for i in range(repetitions):
-        print(artificial_configs[i].numpy().tolist())
-        print(regressions[i].numpy().tolist())
-        print()
