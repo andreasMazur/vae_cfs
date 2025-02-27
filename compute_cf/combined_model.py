@@ -1,4 +1,4 @@
-from data.data_loading import load_data
+from data.data_loading import load_data, USE_CLAMPING_FILTER
 from vae.train_ae import de_normalize_data, normalize_data
 from vae.variational_autoencoder import (
     VariationalAutoEncoder,
@@ -37,9 +37,12 @@ class CombinedModel(tf.keras.models.Model):
     def call(self, inputs, **kwargs):
         mean_values, material_information = inputs
         generated = self.vae.decode(pred_mean=mean_values, pred_log_var=tf.zeros_like(mean_values))
-        input_for_surrogate = tf.concat(
-            [material_information[None, :], tf.round(tf.nn.sigmoid(generated[:, :1])), generated[:, 1:]], axis=-1
-        )
+        if USE_CLAMPING_FILTER is None:
+            input_for_surrogate = tf.concat(
+                [material_information[None, :], tf.round(tf.nn.sigmoid(generated[:, :1])), generated[:, 1:]], axis=-1
+            )
+        else:
+            input_for_surrogate = tf.concat([material_information[None, :], generated], axis=-1)
         return generated, self.surrogate(input_for_surrogate)
 
     def return_in_space_mean(self, n=1):
