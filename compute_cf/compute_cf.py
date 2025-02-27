@@ -1,4 +1,5 @@
 from compute_cf.combined_model import CombinedModel
+from data.data_loading import USE_CLAMPING_FILTER
 from vae.train_ae import normalize_data
 
 import numpy as np
@@ -61,7 +62,8 @@ def compute_counterfactual(Xs_train,
                 f"Deviation: {deviation[0]:.3f}"
             )
         step += 1
-    denormalized_config = tf.concat(
-        [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
-    )
+    if USE_CLAMPING_FILTER is None:
+        denormalized_config = tf.concat(
+            [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
+        )
     return denormalized_config, denormalized_regr
