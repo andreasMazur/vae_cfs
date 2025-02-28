@@ -38,17 +38,18 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val)
         Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test)
 
-    latent_dim = 1
+    latent_dim = 2
     vae = VariationalAutoEncoder(encoding_dims=[16, 16, latent_dim], decoding_dims=[16, 16])
     vae.compile(
-        optimizer=tf.keras.optimizers.Adam(
+        optimizer=tf.keras.optimizers.AdamW(
             learning_rate=tf.keras.optimizers.schedules.ExponentialDecay(
-                initial_learning_rate=0.012183574795933263,
-                decay_steps=1463,
-                decay_rate=0.9
-            )
+                initial_learning_rate=0.01532879826662228,
+                decay_steps=2074,
+                decay_rate=0.9038763890610878
+            ),
+            weight_decay=0.4152095947945318
         ),
-        loss=EvidenceLowerBound(latent_dim=latent_dim, beta=100., warmup_steps=1517),
+        loss=EvidenceLowerBound(latent_dim=latent_dim, beta=92.81073868431973, warmup_steps=1000),
         metrics=[ReconstructionMetric(latent_dim=latent_dim), KLDivMetric(latent_dim=latent_dim)]
     )
     vae(tf.zeros((1, Xs.shape[-1])))
