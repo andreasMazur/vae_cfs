@@ -2,14 +2,9 @@ from compute_cf.combined_model import CombinedModel
 from data.data_loading import USE_CLAMPING_FILTER
 from vae.train_ae import normalize_data
 
-from matplotlib import pyplot as plt
-
 import numpy as np
 import tensorflow as tf
 import sys
-
-
-DEVIATIONS_LIST = []
 
 
 def compute_counterfactual(Xs_train,
@@ -40,7 +35,6 @@ def compute_counterfactual(Xs_train,
     deviation = np.inf
     step = 0
     denormalized_config, denormalized_regr = None, None
-    d_list = []
     while deviation > allowed_deviation and step < max_iterations:
         with tf.GradientTape() as tape:
             tape.watch(init_mean)
@@ -50,7 +44,6 @@ def compute_counterfactual(Xs_train,
 
         grad = tape.gradient(squared_diff, init_mean)
         init_mean = init_mean - eta * grad
-        d_list.append(squared_diff.numpy())
 
         denormalized_regr = regression * ys_stds[0] + ys_means[0]
         deviation = np.abs(denormalized_regr - target_value)
@@ -70,9 +63,5 @@ def compute_counterfactual(Xs_train,
         denormalized_config = tf.concat(
             [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
         )
-    DEVIATIONS_LIST.append(d_list)
-    for d_list in DEVIATIONS_LIST:
-        plt.plot(d_list)
-    plt.grid()
-    plt.show()
+
     return denormalized_config, denormalized_regr
