@@ -13,9 +13,11 @@ def compute_counterfactual(Xs_train,
                            surrogate_path,
                            target_value,
                            allowed_deviation=0.1,
+                           allowed_init_deviation=1.0,
                            eta=0.01,
                            max_iterations=2000,
-                           verbose=False):
+                           verbose=False,
+                           restart_if_necessary=False):
     # Load and normalize data
     Xs_train, Xs_means, Xs_stds = normalize_data(Xs_train)
     ys_train, ys_means, ys_stds = normalize_data(ys_train)
@@ -47,6 +49,10 @@ def compute_counterfactual(Xs_train,
 
         denormalized_regr = regression * ys_stds[0] + ys_means[0]
         deviation = np.abs(denormalized_regr - target_value)
+        # Stop computation of counterfactual if sample has been sampled too far away from suitable configuration
+        if restart_if_necessary and step == max_iterations / 4 and deviation > allowed_init_deviation:
+            # Indicate that run shall be restarted by return 'True'
+            return None, None, True
 
         denormalized_config = conf[0] * Xs_stds + Xs_means
 
@@ -64,4 +70,5 @@ def compute_counterfactual(Xs_train,
             [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
         )
 
-    return denormalized_config, denormalized_regr
+    # Indicate that does not need to be restarted by return 'False'
+    return denormalized_config, denormalized_regr, False

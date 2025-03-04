@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 
-def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250):
+def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5):
     _, Xs_means, Xs_stds = normalize_data(Xs)
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
@@ -17,26 +17,31 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
     cfs = []
     cf_preds = []
     for idx, (target_cf, target_value) in enumerate(zip(Xs_test, ys_test)):
-        config_cf, cf_pred = compute_counterfactual(
-            Xs,
-            ys,
-            vae_path,
-            surrogate_path,
-            target_value=target_value,
-            allowed_deviation=0.1,
-            eta=0.01,
-            verbose=True
-        )
+        trial = 0
+        restart_cf_run = True
+        while restart_cf_run and trial < max_cf_trials:
+            print(f"\nTrial: {trial}")
+            config_cf, cf_pred, restart_cf_run = compute_counterfactual(
+                Xs,
+                ys,
+                vae_path,
+                surrogate_path,
+                target_value=target_value,
+                allowed_deviation=0.1,
+                allowed_init_deviation=(ys.max() - ys.min()) / 10,
+                eta=0.01,
+                verbose=True,
+                restart_if_necessary=trial + 1 < max_cf_trials,
+            )
+            trial += 1
         cfs.append(config_cf)
         cf_preds.append(cf_pred)
     return np.array(cfs), np.array(cf_preds)
 
 
 def remove_k_nearest_neighbors(Xs, ys, sample, k):
-    # Filter for clamping angle and radius
-    neighbors = Xs[:, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
-    sample = sample[None, [COL_BENDING_ANGLE, COL_BENDING_RADIUS]]
-    keep = np.linalg.norm(neighbors - sample, axis=-1).argsort()[k:]
+    # Filter out k nearest neighbors of sample-y-value
+    keep = np.abs(ys - sample)[:, 0].argsort()[k:]
     return Xs[keep], ys[keep]
 
 
@@ -51,11 +56,11 @@ def train_on_partial_data(data_path, logging_dir, n_test=200):
     _, _, (Xs_test, ys_test) = load_data(data_path, splitted=True)
     Xs_test, ys_test = Xs_test[:n_test], ys_test[:n_test]
 
-    for k in [4681 * i for i in range(0, 20)]:
+    for k in [4681 * i for i in range(0, 20)][::-1]:
         # Randomly pick a data point in test set and remove its k nearest neighbors in the training data
         (Xs, ys), (Xs_val, ys_val), _ = load_data(data_path, splitted=True)
-        selected_sample = Xs_test[np.random.randint(low=0, high=n_test)]
-        Xs, ys = remove_k_nearest_neighbors(Xs, ys, selected_sample, k)
+        selected_outcome = ys_test[np.random.randint(low=0, high=n_test)]
+        Xs, ys = remove_k_nearest_neighbors(Xs, ys, selected_outcome, k)
 
         # Train new VAE
         vae_path = f"{logging_dir}/vae_{k}_nn_removed"
