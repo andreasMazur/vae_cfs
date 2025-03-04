@@ -1,5 +1,5 @@
 from compute_cf.compute_cf import compute_counterfactual
-from data.data_loading import load_data, COL_BENDING_ANGLE, COL_BENDING_RADIUS
+from data.data_loading import load_data
 from surrogate_model.surrogate_model import train_surrogate
 from vae.train_ae import train_vae, normalize_data
 
