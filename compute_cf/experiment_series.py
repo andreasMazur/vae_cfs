@@ -1,3 +1,4 @@
+from classifier.clf import train_clf
 from compute_cf.compute_cf import compute_counterfactual
 from data.data_loading import load_data
 from surrogate_model.surrogate_model import train_surrogate
@@ -5,11 +6,12 @@ from vae.train_ae import train_vae, normalize_data
 
 from multiprocessing import Pool
 
+import tensorflow as tf
 import numpy as np
 import os
 
 
-def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5):
+def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5):
     _, Xs_means, Xs_stds = normalize_data(Xs)
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
@@ -41,8 +43,10 @@ def evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_te
 
 def remove_k_nearest_neighbors(Xs, ys, sample, k):
     # Filter out k nearest neighbors of sample-y-value
-    keep = np.abs(ys - sample)[:, 0].argsort()[k:]
-    return Xs[keep], ys[keep]
+    indices = np.abs(ys - sample)[:, 0].argsort()
+    remove = indices[:k]
+    keep = indices[k:]
+    return Xs[keep], ys[keep], Xs[remove], ys[remove]
 
 
 def multiprocessing_experiment_series(data_path, logging_dir, repetitions):
@@ -60,7 +64,7 @@ def train_on_partial_data(data_path, logging_dir, n_test=200):
         # Randomly pick a data point in test set and remove its k nearest neighbors in the training data
         (Xs, ys), (Xs_val, ys_val), _ = load_data(data_path, splitted=True)
         selected_outcome = ys_test[np.random.randint(low=0, high=n_test)]
-        Xs, ys = remove_k_nearest_neighbors(Xs, ys, selected_outcome, k)
+        Xs, ys, Xs_removed, ys_removed = remove_k_nearest_neighbors(Xs, ys, selected_outcome, k)
 
         # Train new VAE
         vae_path = f"{logging_dir}/vae_{k}_nn_removed"
@@ -78,14 +82,19 @@ def train_on_partial_data(data_path, logging_dir, n_test=200):
                 Xs, ys, Xs_val, ys_val, Xs_test, ys_test, dimensions=[32, 32], logging_dir=surrogate_path
             )
 
-        # Check quality of counterfactuals
+        # Compute counterfactuals
         cfs_file = f"{vae_path}/cfs.npy"
         cf_preds_file = f"{vae_path}/cf_preds.npy"
         targets_file = f"{vae_path}/targets.npy"
         y_targets_file = f"{vae_path}/y_targets.npy"
         if not os.path.isfile(cfs_file):
-            cfs, cf_preds = evaluate_cf_quality(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
+            cfs, cf_preds = compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
             np.save(cfs_file, cfs)
             np.save(cf_preds_file, cf_preds)
             np.save(targets_file, Xs_test)
             np.save(y_targets_file, ys_test)
+
+        # Train classifier
+        classifier_path = f"{logging_dir}/classifier_{k}_nn_removed"
+        if not os.path.isfile(cfs_file):
+            train_clf(Xs, Xs_removed, classifier_path)
