@@ -3,20 +3,22 @@ from matplotlib import pyplot as plt
 import numpy as np
 import os
 
+from evaluation.cf_evaluation import N_TRAINING_SAMPLES
+
 
 def table_look_up(configurations, angle_outcomes, target_angle):
     closest_outcome_idx = np.abs(angle_outcomes - target_angle).argmin()
     return configurations[closest_outcome_idx], angle_outcomes[closest_outcome_idx]
 
 
-def table_look_up_experiment(experiment_path, plot=True):
+def table_look_up_experiment(experiment_path, plot=True, max_removed=20):
     # Average plot-values over repetitions
     average_table_plot_values, average_cf_plot_values = [], []
     for repetition in [d for d in os.listdir(experiment_path) if "repetition_" in d]:
-
         # Plot absolute difference vs. k
         table_plot_values, cf_plot_values = [], []
-        for k in [4681 * i for i in range(0, 20)]:
+        data_misses = False
+        for k in [4681 * i for i in range(0, 20)][::-1][:max_removed]:
             folder_name = f"{experiment_path}/{repetition}/vae_{k}_nn_removed"
 
             # Load data
@@ -28,6 +30,8 @@ def table_look_up_experiment(experiment_path, plot=True):
                 cf_preds = np.load(f"{folder_name}/cf_preds.npy")
             except FileNotFoundError:
                 print(f"Data misses in: {folder_name}")
+                data_misses = True
+                break
 
             ############################################################
             # Calculate absolute differences for table look-up approach
@@ -43,7 +47,7 @@ def table_look_up_experiment(experiment_path, plot=True):
                 absolute_differences.append(absolute_difference)
 
             # Remember plot-values
-            table_plot_values.append((k, np.mean(absolute_differences)))
+            table_plot_values.append((N_TRAINING_SAMPLES - k, np.mean(absolute_differences)))
 
             #######################################################
             # Calculate absolute differences for table CF approach
@@ -53,7 +57,11 @@ def table_look_up_experiment(experiment_path, plot=True):
                 # Calculate absolute difference
                 absolute_difference = np.abs(cf_outcome - target_outcome)
                 absolute_differences.append(absolute_difference)
-            cf_plot_values.append((k, np.mean(absolute_differences)))
+            cf_plot_values.append((N_TRAINING_SAMPLES - k, np.mean(absolute_differences)))
+
+        # Don't add repetitions which lack data
+        if data_misses:
+            continue
 
         # Remember repetition plot-values
         average_table_plot_values.append(table_plot_values)
@@ -67,16 +75,30 @@ def table_look_up_experiment(experiment_path, plot=True):
     average_table_plot_values[..., 1] = average_table_plot_values[..., 1] / max_min_distance
     table_plot_values_stds = average_table_plot_values.std(axis=0)[:, 1]
     average_table_plot_values = average_table_plot_values.mean(axis=0)
+    np.savetxt(
+        f"{experiment_path}/table_abs_pred_dev.csv",
+        np.concatenate([average_table_plot_values, table_plot_values_stds[:, None]], axis=-1),
+        delimiter=",",
+        fmt="%f"
+    )
 
     # Average over cf repetitions
     average_cf_plot_values = np.array(average_cf_plot_values)
     average_cf_plot_values[..., 1] = average_cf_plot_values[..., 1] / max_min_distance
     cf_plot_values_stds = average_cf_plot_values.std(axis=0)[:, 1]
     average_cf_plot_values = average_cf_plot_values.mean(axis=0)
+    np.savetxt(
+        f"{experiment_path}/cfs_abs_pred_dev.csv",
+        np.concatenate([average_cf_plot_values, cf_plot_values_stds[:, None]], axis=-1),
+        delimiter=",",
+        fmt="%f"
+    )
 
     if plot:
         # Table graph
-        plt.plot(average_table_plot_values[:, 0], average_table_plot_values[:, 1], color="blue")
+        plt.plot(
+            average_table_plot_values[:, 0], average_table_plot_values[:, 1], color="blue", label="Table look up"
+        )
         plt.errorbar(
             average_table_plot_values[:, 0],
             average_table_plot_values[:, 1],
@@ -86,7 +108,9 @@ def table_look_up_experiment(experiment_path, plot=True):
             color="blue"
         )
         # CF graph
-        plt.plot(average_cf_plot_values[:, 0], average_cf_plot_values[:, 1], color="red")
+        plt.plot(
+            average_cf_plot_values[:, 0], average_cf_plot_values[:, 1], color="red", label="CF"
+        )
         plt.errorbar(
             average_cf_plot_values[:, 0],
             average_cf_plot_values[:, 1],
@@ -97,8 +121,9 @@ def table_look_up_experiment(experiment_path, plot=True):
         )
 
         plt.title("Table look up vs. Counterfactuals")
-        plt.xlabel("k-nearest neighbors removed")
+        plt.xlabel("available amount of data")
         plt.ylabel("mean absolute difference")
         plt.grid()
+        plt.legend()
         plt.show()
     return average_table_plot_values
