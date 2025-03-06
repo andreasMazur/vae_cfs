@@ -56,6 +56,8 @@ def multiprocessing_experiment_series(data_path, logging_dir, repetitions):
 
 
 def train_on_partial_data(data_path, logging_dir, n_test=200):
+    os.makedirs(logging_dir, exist_ok=True)
+
     # Select test data
     _, _, (Xs_test, ys_test) = load_data(data_path, splitted=True)
     Xs_test, ys_test = Xs_test[:n_test], ys_test[:n_test]
