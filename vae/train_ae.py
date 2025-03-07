@@ -53,7 +53,7 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         metrics=[ReconstructionMetric(latent_dim=latent_dim), KLDivMetric(latent_dim=latent_dim)]
     )
     vae(tf.zeros((1, Xs.shape[-1])))
-    vae.summary()
+    # vae.summary()
 
     # Start training
     os.makedirs(logging_dir, exist_ok=True)
@@ -63,7 +63,7 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         mode="min",
         save_best_only=True,
         save_weights_only=False,
-        verbose=True
+        verbose=False
     )
     stop_callback = tf.keras.callbacks.EarlyStopping(
         monitor="val_reconstruction_loss",
@@ -86,10 +86,7 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         batch_size=64,
         epochs=10_000,
         validation_data=(Xs_val, Xs_val),
-        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb]
+        callbacks=[cp_callback, csv_callback, stop_callback, tensorboard_cb],
+        verbose=0
     )
-
-    print("Evaluate")
-    result = vae.evaluate(x=Xs_test, y=Xs_test)
-    print(dict(zip(vae.metrics_names, result)))
     return training_history

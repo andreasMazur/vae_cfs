@@ -5,13 +5,13 @@ from surrogate_model.surrogate_model import train_surrogate
 from vae.train_ae import train_vae, normalize_data
 
 from multiprocessing import Pool
+from tqdm import tqdm
 
-import tensorflow as tf
 import numpy as np
 import os
 
 
-def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5):
+def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5, verbose=True):
     _, Xs_means, Xs_stds = normalize_data(Xs)
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
@@ -22,7 +22,8 @@ def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_tes
         trial = 0
         restart_cf_run = True
         while restart_cf_run and trial < max_cf_trials:
-            print(f"\nTrial: {trial}")
+            if verbose:
+                print(f"\nTrial: {trial}")
             config_cf, cf_pred, restart_cf_run = compute_counterfactual(
                 Xs,
                 ys,
@@ -32,7 +33,7 @@ def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_tes
                 allowed_deviation=0.1,
                 allowed_init_deviation=(ys.max() - ys.min()) / 10,
                 eta=0.01,
-                verbose=True,
+                verbose=verbose,
                 restart_if_necessary=trial + 1 < max_cf_trials,
             )
             trial += 1
@@ -62,7 +63,10 @@ def train_on_partial_data_wrapper(data_path, logging_dir, repetitions=100, n_tes
         with Pool(processes) as p:
             p.starmap(
                 train_on_partial_data,
-                [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(0, 20)][::-1]]
+                tqdm(
+                    [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(2, 12)][::-1]],
+                    postfix=f"Currently in repetition {rep}"
+                )
             )
 
 
@@ -94,7 +98,7 @@ def train_on_partial_data(k, logging_dir, data_path, Xs_test, ys_test):
     targets_file = f"{vae_path}/targets.npy"
     y_targets_file = f"{vae_path}/y_targets.npy"
     if not os.path.isfile(cfs_file):
-        cfs, cf_preds = compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path)
+        cfs, cf_preds = compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, verbose=False)
         np.save(cfs_file, cfs)
         np.save(cf_preds_file, cf_preds)
         np.save(targets_file, Xs_test)
