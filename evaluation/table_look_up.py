@@ -20,7 +20,7 @@ def table_look_up_experiment(data_path, experiment_path, plot=True, max_removed=
         # Plot absolute difference vs. k
         table_plot_values, cf_plot_values, closest_plot_values = [], [], []
         data_misses = False
-        for k in [4681 * i for i in range(0, 20)][::-1][:max_removed]:
+        for k in [4681 * i for i in range(8, 18)][::-1][:max_removed]:
             folder_name = f"{experiment_path}/{repetition}/vae_{k}_nn_removed"
 
             # Load data
