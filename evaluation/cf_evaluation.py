@@ -20,7 +20,6 @@ def get_most_similar_config(Xs, ys, x_cf):
 
 
 def cf_evaluation(data_path, logs_dir, plot=True, max_removed=20):
-    Xs_all, _ = load_data(data_path, splitted=False)
     (Xs, ys), _, _ = load_data(data_path, splitted=True)
     for feature in range(4):
         gt_plot_values = []
@@ -41,7 +40,7 @@ def cf_evaluation(data_path, logs_dir, plot=True, max_removed=20):
                     )[:, feature]
                     total_feature_difference = np.abs(cfs_feature - true_x_for_target).mean()
                     repetition_gt_plot_values.append(
-                        ((N_TRAINING_SAMPLES - removed) * 100 / Xs_all.shape[0], total_feature_difference)
+                        ((N_TRAINING_SAMPLES - removed) * 100 / N_TRAINING_SAMPLES, total_feature_difference)
                     )
                 except FileNotFoundError:
                     print(f"Data misses in: {logs_dir}/{repetition}/vae_{removed}_nn_removed/")
@@ -55,7 +54,7 @@ def cf_evaluation(data_path, logs_dir, plot=True, max_removed=20):
                 closest_x_feature = closest_x[:, feature]
                 total_feature_difference = np.abs(cfs_feature - closest_x_feature).mean()
                 repetition_closest_plot_values.append(
-                    ((N_TRAINING_SAMPLES - removed) * 100 / Xs_all.shape[0], total_feature_difference)
+                    ((N_TRAINING_SAMPLES - removed) * 100 / N_TRAINING_SAMPLES, total_feature_difference)
                 )
 
             gt_plot_values.append(repetition_gt_plot_values)

@@ -47,7 +47,7 @@ def table_look_up_experiment(data_path, experiment_path, plot=True, max_removed=
                 # Calculate absolute difference
                 absolute_difference = np.abs(outcome - target_outcome)
                 absolute_differences.append(absolute_difference)
-            table_plot_values.append(((N_TRAINING_SAMPLES - k) * 100 / Xs_all.shape[0], np.mean(absolute_differences)))
+            table_plot_values.append(((N_TRAINING_SAMPLES - k) * 100 / N_TRAINING_SAMPLES, np.mean(absolute_differences)))
 
             #######################################################
             # Calculate absolute differences for table CF approach
@@ -58,7 +58,7 @@ def table_look_up_experiment(data_path, experiment_path, plot=True, max_removed=
                 absolute_difference = np.abs(cf_outcome - target_outcome)
                 absolute_differences.append(absolute_difference)
             cf_plot_values.append(
-                ((N_TRAINING_SAMPLES - k) * 100 / Xs_all.shape[0], np.mean(absolute_differences))
+                ((N_TRAINING_SAMPLES - k) * 100 / N_TRAINING_SAMPLES, np.mean(absolute_differences))
             )
 
             #####################################################################################
@@ -71,7 +71,7 @@ def table_look_up_experiment(data_path, experiment_path, plot=True, max_removed=
                 absolute_difference = np.abs(cf_outcome - cxy)
                 absolute_differences.append(absolute_difference)
             closest_plot_values.append(
-                ((N_TRAINING_SAMPLES - k) * 100 / Xs_all.shape[0], np.mean(absolute_differences))
+                ((N_TRAINING_SAMPLES - k) * 100 / N_TRAINING_SAMPLES, np.mean(absolute_differences))
             )
 
         # Don't add repetitions which lack data
