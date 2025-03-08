@@ -28,7 +28,7 @@ def cf_evaluation(data_path, logs_dir, plot=True, max_removed=20):
         for repetition in [d for d in os.listdir(logs_dir) if "repetition_" in d]:
             repetition_gt_plot_values = []
             repetition_closest_plot_values = []
-            for removed in [4681 * i for i in range(8, 18)][::-1][:max_removed]:
+            for removed in [4681 * i for i in range(8, 15)][::-1][:max_removed]:
                 ########################################################################################
                 # Calculate mean absolute relative difference (w.r.t. true process config for target y)
                 ########################################################################################
