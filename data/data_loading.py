@@ -10,7 +10,7 @@ COL_W1 = 4
 
 
 def load_data(data_path, split=True):
-    """Load data from CSV file and normalize it using the z-score.
+    """Load data from CSV file.
 
     Parameters
     ----------
