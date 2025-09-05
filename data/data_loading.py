@@ -20,7 +20,7 @@ def load_data(data_path, split=True):
         Whether to split the data into training, validation, and test sets.
     """
     # Load CSV
-    table = pd.read_csv(data_path, index_col=0).values
+    table = pd.read_csv(data_path).values
 
     if split:
         # Compute train- and validation index
