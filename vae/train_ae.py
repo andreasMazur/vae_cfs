@@ -1,4 +1,3 @@
-from data.data_loading import COL_BENDING_ANGLE, COL_BENDING_RADIUS, USE_CLAMPING_FILTER, COL_CLAMPING
 from vae.variational_autoencoder import (
     VariationalAutoEncoder,
     EvidenceLowerBound,
@@ -11,6 +10,20 @@ import os
 
 
 def normalize_data(data, disregard_dims=None):
+    """Apply z-score normalization to the data.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        The data to be normalized.
+    disregard_dims: list
+        Dimensions to disregard during normalization (set mean=0, std=1).
+
+    Returns
+    -------
+    (np.ndarray, np.ndarray, np.ndarray)
+        The normalized data, the used means, and the used standard deviations.
+    """
     dims_mean = data.mean(axis=0)
     dims_std = data.std(axis=0)
     if disregard_dims is not None:
@@ -21,22 +34,48 @@ def normalize_data(data, disregard_dims=None):
 
 
 def de_normalize_data(data, dims_mean, dims_std):
+    """Revert z-score normalization given the means and standard deviations.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        The normalized data.
+    dims_mean: np.ndarray
+        The means used for normalization.
+    dims_std: np.ndarray
+        The standard deviations used for normalization.
+
+    Returns
+    -------
+    np.ndarray
+        The de-normalized data.
+    """
     return data * dims_std + dims_mean
 
 
-def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
+def train_vae(Xs, Xs_val, logging_dir=None):
+    """Train a Variational Autoencoder (VAE) on the provided dataset.
+
+    Parameters
+    ----------
+    Xs: np.ndarray
+        The training data.
+    Xs_val: np.ndarray
+        The validation data.
+    logging_dir: str
+        The directory to save logs and model checkpoints.
+
+    Returns
+    -------
+    dict:
+        The training history of the VAE.
+    """
     if logging_dir is None:
         logging_dir = "./trained_vae"
 
-    # Don't normalize clamping
-    if USE_CLAMPING_FILTER is None:
-        Xs, Xs_means, Xs_stds = normalize_data(Xs, disregard_dims=[COL_CLAMPING])
-        Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val, disregard_dims=[COL_CLAMPING])
-        Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test, disregard_dims=[COL_CLAMPING])
-    else:
-        Xs, Xs_means, Xs_stds = normalize_data(Xs)
-        Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val)
-        Xs_test, Xs_means, Xs_stds = normalize_data(Xs_test)
+    # Normalize data using z-score normalization
+    Xs, Xs_means, Xs_stds = normalize_data(Xs)
+    Xs_val, Xs_means, Xs_stds = normalize_data(Xs_val)
 
     latent_dim = 2
     vae = VariationalAutoEncoder(encoding_dims=[16, 16, latent_dim], decoding_dims=[16, 16])
@@ -53,7 +92,6 @@ def train_vae(Xs, Xs_val, Xs_test, logging_dir=None):
         metrics=[ReconstructionMetric(latent_dim=latent_dim), KLDivMetric(latent_dim=latent_dim)]
     )
     vae(tf.zeros((1, Xs.shape[-1])))
-    # vae.summary()
 
     # Start training
     os.makedirs(logging_dir, exist_ok=True)
