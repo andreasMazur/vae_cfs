@@ -1,4 +1,4 @@
-from vae.train_ae import normalize_data, de_normalize_data
+from vae.train_ae import normalize_data
 
 import tensorflow as tf
 import keras
