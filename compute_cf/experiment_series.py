@@ -11,7 +11,7 @@ import numpy as np
 import os
 
 
-def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=250, max_cf_trials=5, verbose=True):
+def compute_cf_wrapper(Xs, ys, Xs_test, ys_test, vae_path, surrogate_path, N_test=200, max_cf_trials=5, verbose=True):
     _, Xs_means, Xs_stds = normalize_data(Xs)
     Xs_test, ys_test = Xs_test[:N_test], ys_test[:N_test]
 
