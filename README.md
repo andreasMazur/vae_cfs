@@ -36,6 +36,7 @@ pip install -r requirements.txt
 The code is structured in the following way:
 1. You need to run the training experiments first. This can be done by executing the script `run_experiments.py`.
    Depending on how you have specified your logging directory path, this will create a folder `logs` in which all the
-   results are stored.
+   results are stored. Furthermore, you need to specify the path to this repository so that the experiments can find the
+   dataset.
 2. After the experiments are done, you can run the evaluation script `run_evaluation.py` to generate the plots. For this
    to work, you need to specify the path to the logging directory where the results are stored.
