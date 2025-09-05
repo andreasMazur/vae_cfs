@@ -1,4 +1,4 @@
-from compute_cf.combined_model import CombinedModel
+from combined_model import CombinedModel
 from vae.train_ae import normalize_data
 
 import numpy as np

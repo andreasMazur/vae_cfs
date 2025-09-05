@@ -1,4 +1,3 @@
-from classifier.clf import train_clf
 from compute_cf.compute_cf import compute_cf_wrapper
 from data.data_loading import load_data
 from surrogate_model.surrogate_model import train_surrogate
@@ -32,7 +31,7 @@ def remove_k_nearest_neighbors(Xs, ys, sample, k):
 
 
 def train_on_partial_data(k, logging_dir, data_path, Xs_test, ys_test):
-    """ Train models and compute counterfactuals after removing k nearest neighbors of a random test point.
+    """Train models and compute counterfactuals after removing k nearest neighbors of a random test point.
 
     Parameters
     ----------
@@ -79,11 +78,6 @@ def train_on_partial_data(k, logging_dir, data_path, Xs_test, ys_test):
         np.save(cf_preds_file, cf_preds)
         np.save(targets_file, Xs_test)
         np.save(y_targets_file, ys_test)
-
-    # Train classifier
-    classifier_path = f"{logging_dir}/classifier_{k}_nn_removed"
-    if not os.path.isfile(cfs_file):
-        train_clf(Xs, Xs_removed, classifier_path)
 
 
 def train_on_partial_data_wrapper(data_path, logging_dir, repetitions=100, n_test=200, processes=10):
