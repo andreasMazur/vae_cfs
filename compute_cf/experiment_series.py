@@ -109,7 +109,7 @@ def train_on_partial_data_wrapper(data_path, logging_dir, repetitions=100, n_tes
             p.starmap(
                 train_on_partial_data,
                 tqdm(
-                    [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(8, 18)][::-1]],
+                    [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(8, 15)][::-1]],
                     postfix=f"Currently in repetition {rep}"
                 )
             )
