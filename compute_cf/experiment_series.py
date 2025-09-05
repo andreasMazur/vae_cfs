@@ -1,4 +1,5 @@
 from classifier.clf import train_clf
+from compute_cf.compute_cf import compute_cf_wrapper
 from data.data_loading import load_data
 from surrogate_model.surrogate_model import train_surrogate
 from vae.train_ae import train_vae
