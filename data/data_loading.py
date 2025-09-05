@@ -1,41 +1,28 @@
 import pandas as pd
 import math
 
-# Decide whether to use clamping here
-# None: No clamping filter
-# 0: Only clamping = 0
-# 1: Only clamping = 1
-USE_CLAMPING_FILTER = 0
-assert USE_CLAMPING_FILTER in [None, 0, 1], "USE_CLAMPING_FILTER must be None, 0 or 1."
-if USE_CLAMPING_FILTER is None:
-    COL_E_MODULUS = 0
-    COL_THICKNESS = 1
-    COL_CLAMPING = 2
-    COL_BENDING_ANGLE = 3
-    COL_BENDING_RADIUS = 4
-    COL_W1 = 5
-else:
-    COL_E_MODULUS = 0
-    COL_THICKNESS = 1
-    COL_CLAMPING = None
-    COL_BENDING_ANGLE = 2
-    COL_BENDING_RADIUS = 3
-    COL_W1 = 4
+# Column names to integer
+COL_E_MODULUS = 0
+COL_THICKNESS = 1
+COL_BENDING_ANGLE = 2
+COL_BENDING_RADIUS = 3
+COL_W1 = 4
 
 
-def load_data(data_path, splitted=True):
+def load_data(data_path, split=True):
+    """Load data from CSV file and normalize it using the z-score.
+
+    Parameters
+    ----------
+    data_path: str
+        Path to the CSV file containing the data.
+    split: bool
+        Whether to split the data into training, validation, and test sets.
+    """
     # Load CSV
     table = pd.read_csv(data_path, index_col=0).values
 
-    # Filter clamping values if wanted
-    if USE_CLAMPING_FILTER == 0:
-        table = table[table[:, 2] == 0]
-        table = table[:, [0, 1, 3, 4, 5]]
-    elif USE_CLAMPING_FILTER == 1:
-        table = table[table[:, 2] == 1]
-        table = table[:, [0, 1, 3, 4, 5]]
-
-    if splitted:
+    if split:
         # Compute train- and validation index
         train_idx = math.ceil(table[:, :COL_W1].shape[0] * 0.75)
         val_idx = math.floor(table[train_idx:].shape[0] / 2)
