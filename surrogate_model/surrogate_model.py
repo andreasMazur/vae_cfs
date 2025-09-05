@@ -6,20 +6,6 @@ import numpy as np
 import os
 
 
-def evaluate(model, test_data):
-    Xs_test, ys_test = test_data
-    Xs_test, Xs_test_means, Xs_test_stds = normalize_data(Xs_test)
-    ys_test, ys_test_means, ys_test_stds = normalize_data(ys_test)
-
-    model.evaluate(x=Xs_test, y=ys_test)
-
-    predictions = model(Xs_test).numpy()
-    predictions = de_normalize_data(predictions, ys_test_means, ys_test_stds)
-    ys_test = de_normalize_data(ys_test, ys_test_means, ys_test_stds)
-    error = np.mean(np.abs(predictions - ys_test), axis=0)
-    print(error)
-
-
 def r2_score(y_true, y_pred):
     """Calculate the R^2 (coefficient of determination) regression score function.
 
