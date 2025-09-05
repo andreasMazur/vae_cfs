@@ -101,10 +101,6 @@ def compute_counterfactual(Xs_train,
                 f"Deviation: {deviation[0]:.3f}"
             )
         step += 1
-    # if USE_CLAMPING_FILTER is None:
-    #     denormalized_config = tf.concat(
-    #         [tf.round(tf.nn.sigmoid(denormalized_config[:1])), denormalized_config[1:]], axis=-1
-    #     )
 
     # Indicate that does not need to be restarted by return 'False'
     return denormalized_config, denormalized_regr, False

@@ -69,10 +69,6 @@ class CombinedModel(tf.keras.models.Model):
             The training mode flag.
         """
         generated = self.vae.decode(pred_mean=inputs, pred_log_var=tf.zeros_like(inputs), training=training)
-        # if USE_CLAMPING_FILTER is None:
-        #     generated = tf.concat(
-        #         [generated[:, :2], tf.round(tf.nn.sigmoid(generated[:, 2:3])), generated[:, 3:]], axis=-1
-        #     )
         return generated, self.surrogate(generated)
 
     def return_in_space_mean(self, n=1):
