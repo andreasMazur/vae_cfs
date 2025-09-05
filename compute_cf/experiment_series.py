@@ -50,26 +50,6 @@ def remove_k_nearest_neighbors(Xs, ys, sample, k):
     return Xs[keep], ys[keep], Xs[remove], ys[remove]
 
 
-def train_on_partial_data_wrapper(data_path, logging_dir, repetitions=100, n_test=200, processes=10):
-    os.makedirs(logging_dir, exist_ok=True)
-
-    # Select test data
-    _, _, (Xs_test, ys_test) = load_data(data_path, splitted=True)
-    Xs_test, ys_test = Xs_test[:n_test], ys_test[:n_test]
-
-    # Run experiments
-    for rep in range(repetitions):
-        logging_dir = f"{logging_dir}/repetition_{rep}"
-        with Pool(processes) as p:
-            p.starmap(
-                train_on_partial_data,
-                tqdm(
-                    [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(8, 18)][::-1]],
-                    postfix=f"Currently in repetition {rep}"
-                )
-            )
-
-
 def train_on_partial_data(k, logging_dir, data_path, Xs_test, ys_test):
     # Randomly pick a data point in test set and remove its k nearest neighbors in the training data
     (Xs, ys), (Xs_val, ys_val), _ = load_data(data_path, splitted=True)
@@ -108,3 +88,23 @@ def train_on_partial_data(k, logging_dir, data_path, Xs_test, ys_test):
     classifier_path = f"{logging_dir}/classifier_{k}_nn_removed"
     if not os.path.isfile(cfs_file):
         train_clf(Xs, Xs_removed, classifier_path)
+
+
+def train_on_partial_data_wrapper(data_path, logging_dir, repetitions=100, n_test=200, processes=10):
+    os.makedirs(logging_dir, exist_ok=True)
+
+    # Select test data
+    _, _, (Xs_test, ys_test) = load_data(data_path, splitted=True)
+    Xs_test, ys_test = Xs_test[:n_test], ys_test[:n_test]
+
+    # Run experiments
+    for rep in range(repetitions):
+        logging_dir = f"{logging_dir}/repetition_{rep}"
+        with Pool(processes) as p:
+            p.starmap(
+                train_on_partial_data,
+                tqdm(
+                    [(k, logging_dir, data_path, Xs_test, ys_test) for k in [4681 * i for i in range(8, 18)][::-1]],
+                    postfix=f"Currently in repetition {rep}"
+                )
+            )
