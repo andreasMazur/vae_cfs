@@ -7,8 +7,9 @@ This repository contains scripts and the data to reproduced the results for the 
 @article{mahajan2019preserving,
   title        = {Studying the Generalization Behavior of Surrogate Models for Punch-Bending by Generating Plausible Counterfactuals},
   author       = {Andreas Mazur, Henning Peters, André Artelt, Lukas Koller, Christoph Hartmann, Ansgar Trächtler and Barbara Hammer},
-  booktitle    = {ICANN proceedings 2025}
-  year         = {2025}
+  booktitle    = {ICANN proceedings 2025},
+  year         = {2025},
+  doi          = {https://doi.org/10.1007/978-3-032-04555-3_16}
 }
 ```
 
