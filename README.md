@@ -4,7 +4,7 @@
 This repository contains scripts and the data to reproduced the results for the paper:
 
 ```
-@article{mahajan2019preserving,
+@article{cfs_for_punch_bending,
   title        = {Studying the Generalization Behavior of Surrogate Models for Punch-Bending by Generating Plausible Counterfactuals},
   author       = {Andreas Mazur, Henning Peters, André Artelt, Lukas Koller, Christoph Hartmann, Ansgar Trächtler and Barbara Hammer},
   booktitle    = {ICANN proceedings 2025},
